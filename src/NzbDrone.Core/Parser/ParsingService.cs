@@ -172,7 +172,7 @@ namespace NzbDrone.Core.Parser
             }
 
             // nothing found up to here => logging that and returning null
-            _logger.Debug($"No matching movie {parsedMovieInfo.MovieTitle}");
+            _logger.Debug($"No matching movie {parsedMovieInfo.PrimaryMovieTitle}");
             return result;
         }
 
@@ -201,19 +201,19 @@ namespace NzbDrone.Core.Parser
 
         private bool TryGetMovieByTitleAndOrYear(ParsedMovieInfo parsedMovieInfo, out MappingResult result)
         {
-            var candidates = _movieService.FindByTitleCandidates(parsedMovieInfo.MovieTitle, out var arabicTitle, out var romanTitle);
+            var candidates = _movieService.FindByTitleCandidates(parsedMovieInfo.PrimaryMovieTitle, out var arabicTitle, out var romanTitle);
 
             Movie movieByTitleAndOrYear;
             if (parsedMovieInfo.Year > 1800)
             {
-                movieByTitleAndOrYear = _movieService.FindByTitle(parsedMovieInfo.MovieTitle, parsedMovieInfo.Year, arabicTitle, romanTitle, candidates);
+                movieByTitleAndOrYear = _movieService.FindByTitle(parsedMovieInfo.PrimaryMovieTitle, parsedMovieInfo.Year, arabicTitle, romanTitle, candidates);
                 if (movieByTitleAndOrYear != null)
                 {
                     result = new MappingResult { Movie = movieByTitleAndOrYear };
                     return true;
                 }
 
-                movieByTitleAndOrYear = _movieService.FindByTitle(parsedMovieInfo.MovieTitle, null, arabicTitle, romanTitle, candidates);
+                movieByTitleAndOrYear = _movieService.FindByTitle(parsedMovieInfo.PrimaryMovieTitle, null, arabicTitle, romanTitle, candidates);
                 if (movieByTitleAndOrYear != null)
                 {
                     result = new MappingResult { Movie = movieByTitleAndOrYear, MappingResultType = MappingResultType.WrongYear };
@@ -224,7 +224,7 @@ namespace NzbDrone.Core.Parser
                 return false;
             }
 
-            movieByTitleAndOrYear = _movieService.FindByTitle(parsedMovieInfo.MovieTitle, null, arabicTitle, romanTitle, candidates);
+            movieByTitleAndOrYear = _movieService.FindByTitle(parsedMovieInfo.PrimaryMovieTitle, null, arabicTitle, romanTitle, candidates);
             if (movieByTitleAndOrYear != null)
             {
                 result = new MappingResult { Movie = movieByTitleAndOrYear };
@@ -245,7 +245,7 @@ namespace NzbDrone.Core.Parser
             possibleTitles.AddRange(searchCriteria.Movie.AlternativeTitles.Select(t => t.CleanTitle));
             possibleTitles.AddRange(searchCriteria.Movie.Translations.Select(t => t.CleanTitle));
 
-            var cleanTitle = parsedMovieInfo.MovieTitle.CleanMovieTitle();
+            var cleanTitle = parsedMovieInfo.PrimaryMovieTitle.CleanMovieTitle();
 
             foreach (var title in possibleTitles)
             {
@@ -303,13 +303,13 @@ namespace NzbDrone.Core.Parser
                     case MappingResultType.NotParsable:
                         return $"Failed to find movie title in release name {ReleaseName}";
                     case MappingResultType.TitleNotFound:
-                        return $"Could not find {RemoteMovie.ParsedMovieInfo.MovieTitle}";
+                        return $"Could not find {RemoteMovie.ParsedMovieInfo.PrimaryMovieTitle}";
                     case MappingResultType.WrongYear:
                         return $"Failed to map movie, expected year {RemoteMovie.Movie.Year}, but found {RemoteMovie.ParsedMovieInfo.Year}";
                     case MappingResultType.WrongTitle:
                         var comma = RemoteMovie.Movie.AlternativeTitles.Count > 0 ? ", " : "";
                         return
-                            $"Failed to map movie, found title {RemoteMovie.ParsedMovieInfo.MovieTitle}, expected one of: {RemoteMovie.Movie.Title}{comma}{string.Join(", ", RemoteMovie.Movie.AlternativeTitles)}";
+                            $"Failed to map movie, found title {RemoteMovie.ParsedMovieInfo.PrimaryMovieTitle}, expected one of: {RemoteMovie.Movie.Title}{comma}{string.Join(", ", RemoteMovie.Movie.AlternativeTitles)}";
                     default:
                         return $"Failed to map movie for unknown reasons";
                 }
